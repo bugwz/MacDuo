@@ -3,7 +3,7 @@ set -euo pipefail
 cd "${0:A:h}/.."
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/module-cache"
 export SWIFTPM_MODULECACHE_OVERRIDE="$PWD/.build/module-cache"
-VERSION="${VERSION:-0.0.1}"
+VERSION="${VERSION:-0.0.2}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
 ARCHS=(--arch arm64 --arch x86_64)
 if [[ "${NATIVE_ONLY:-0}" == 1 ]]; then ARCHS=(); fi

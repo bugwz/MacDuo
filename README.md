@@ -5,7 +5,7 @@
 <h1 align="center">MacDuo</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.1-blue" alt="Version 0.0.1">
+  <img src="https://img.shields.io/badge/version-0.0.2-blue" alt="Version 0.0.2">
   <img src="https://img.shields.io/badge/macOS-14%2B-black?logo=apple" alt="macOS 14+">
   <img src="https://img.shields.io/badge/Swift-5.9%2B-orange?logo=swift" alt="Swift 5.9+">
   <img src="https://img.shields.io/badge/Apple_Silicon_%26_Intel-universal-blue" alt="Apple Silicon and Intel">
@@ -92,7 +92,7 @@ The persistent entry uses private Control Strip interfaces loaded at runtime thr
 
 ## Permissions and releases
 
-Version **0.0.1** uses the fixed bundle identifier `dev.macduo.app`. The release workflow supports Developer ID Application signing and notarization for distribution through GitHub. It is not an App Store distribution workflow; actual notarization success depends on the release CI result. Full setup: [RELEASING.md](docs/RELEASING.md) (Chinese).
+Version **0.0.2** uses the fixed bundle identifier `dev.macduo.app`. The release workflow supports Developer ID Application signing and notarization for distribution through GitHub. It is not an App Store distribution workflow; actual notarization success depends on the release CI result. Full setup: [RELEASING.md](docs/RELEASING.md) (Chinese).
 
 Screen recording is requested only when you explicitly start the effect, without automatic retries. ScreenCaptureKit supplies the actual authorization result. Ad hoc signed builds may require renewed permission after rebuilding; a fixed certificate helps preserve identity.
 

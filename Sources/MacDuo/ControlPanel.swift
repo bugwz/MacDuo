@@ -27,7 +27,7 @@ struct ControlPanel: View {
                     }
                     .frame(width: 230)
                     Spacer()
-                    Text("v" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.1"))
+                    Text("v" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.2"))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if interfaceLanguage != AppLocalization.language.rawValue {

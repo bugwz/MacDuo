@@ -53,13 +53,13 @@ security find-identity -v -p codesigning
 发布示例：
 
 ```sh
-git tag v0.0.1
-git push origin v0.0.1
+git tag v0.0.2
+git push origin v0.0.2
 ```
 
 证书导入临时钥匙串，仅允许签名工具使用，作业结束后清理。没有证书、证书类型错误或公证失败时发布任务失败，**不会退回临时签名并发布**。私钥、证书导出文件、密码都不提交到仓库。不需要 Mac App Store provisioning profile，也不添加 App Sandbox entitlement。
 
-`VERSION` 来自标签，`BUILD_NUMBER` 来自 GitHub run number。本地默认为 0.0.1 / 1。`NATIVE_ONLY=1` 可用于本地单架构编译；发版始终使用默认 universal 架构。
+`VERSION` 来自标签，`BUILD_NUMBER` 来自 GitHub run number。本地默认为 0.0.2 / 1。`NATIVE_ONLY=1` 可用于本地单架构编译；发版始终使用默认 universal 架构。
 
 ## HID 错误
 

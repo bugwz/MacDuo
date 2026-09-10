@@ -5,7 +5,7 @@
 <h1 align="center">MacDuo</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.0.1-blue" alt="Version 0.0.1">
+  <img src="https://img.shields.io/badge/version-0.0.2-blue" alt="Version 0.0.2">
   <img src="https://img.shields.io/badge/macOS-14%2B-black?logo=apple" alt="macOS 14+">
   <img src="https://img.shields.io/badge/Swift-5.9%2B-orange?logo=swift" alt="Swift 5.9+">
   <img src="https://img.shields.io/badge/Apple_Silicon_%26_Intel-universal-blue" alt="Apple Silicon and Intel">
