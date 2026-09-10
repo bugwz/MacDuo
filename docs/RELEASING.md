@@ -36,6 +36,10 @@ security find-identity -v -p codesigning
 - `release.yml`：推送 `vX.Y.Z` 标签，或手动选择已有标签；生成正式签名、公证并 stapled 的 universal ZIP、DMG、SHA256SUMS，创建 **草稿 Release**。人工检查后发布。不会覆盖已发布版本。
 - 发布环境为 `release`，建议在 GitHub 配置该环境仅允许受保护的版本标签；签名 secrets 仅供发布环境使用。
 
+推送标签前，必须将对应版本的发布说明 `release/X.Y.Z.md` 提交到该标签指向的提交中。Actions 会读取该文件，去掉首行一级标题和紧随其后的空行，将其余 Markdown 正文写入对应 tag 的 Release 描述，保留双语内容；缺失或正文为空时任务失败，不使用链接或自动生成的说明替代。
+
+签名、公证和打包成功后，Actions 会检查并将 `MacDuo-X.Y.Z-universal.zip`、`MacDuo-X.Y.Z-universal.dmg` 和 `SHA256SUMS.txt` 上传到对应 tag 的 Release Assets，同时保留 Actions artifacts。重跑时会更新同一草稿的正文和附件；已公开的 Release 不会被覆盖。任务成功后检查草稿正文、三个附件及签名公证结果，再发布草稿，用户即可从该 Release 下载软件包。
+
 在 GitHub 的 `release` Environment 添加：
 
 | Secret | 内容 |

@@ -33,6 +33,25 @@ jobs:
           git show-ref --verify "refs/tags/$RELEASE_TAG"
           echo "VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
           echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+      - name: Prepare release description
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          source = Path('release') / f"{os.environ['VERSION']}.md"
+          lines = source.read_text(encoding='utf-8').splitlines(keepends=True)
+          if lines and lines[0].startswith('# '):
+              lines.pop(0)
+          while lines and not lines[0].strip():
+              lines.pop(0)
+          body = ''.join(lines)
+          if not body.strip():
+              raise SystemExit(f'Release notes are empty: {source}')
+          (Path(os.environ['RUNNER_TEMP']) / 'release-notes.md').write_text(body, encoding='utf-8')
+          PY
       - name: Import Developer ID certificate
         env:
           CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
@@ -67,18 +86,29 @@ jobs:
         with:
           name: MacDuo-${{ env.VERSION }}
           path: dist/release/*
+          if-no-files-found: error
       - name: Create or update draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+          assets=(
+            "dist/release/MacDuo-${VERSION}-universal.zip"
+            "dist/release/MacDuo-${VERSION}-universal.dmg"
+            "dist/release/SHA256SUMS.txt"
+          )
+          for asset in "${assets[@]}"; do
+            test -s "$asset" || { echo "Missing release asset: $asset"; exit 1; }
+          done
+          (cd dist/release && shasum -a 256 -c SHA256SUMS.txt)
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true || { echo 'Refusing to replace a published release'; exit 1; }
+            gh release edit "$RELEASE_TAG" --notes-file "$RUNNER_TEMP/release-notes.md" --title "MacDuo $RELEASE_TAG"
           else
-            gh release create "$RELEASE_TAG" --verify-tag --draft --generate-notes --title "MacDuo $RELEASE_TAG"
+            gh release create "$RELEASE_TAG" --verify-tag --draft --notes-file "$RUNNER_TEMP/release-notes.md" --title "MacDuo $RELEASE_TAG"
           fi
-          gh release upload "$RELEASE_TAG" dist/release/* --clobber
+          gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
       - name: Remove signing material
         if: always()
         shell: bash
