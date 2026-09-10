@@ -43,24 +43,26 @@ public struct AngleLatch {
     }
 }
 
-/// Full-height curved desktop; the bottom remains anchored at the hinge.
+/// Perspective through a pane rotating about the bottom hinge.
+/// Coordinates are normalized bottom to top; the eye is centered 2.4 screen heights away.
 public struct FoldPose {
     public let progress: Double
     public var intensity: Double { abs(progress) }
+    public var verticalScale: Double { cos(progress * 50 * .pi / 180) }
+    public var depthScale: Double { sin(progress * 50 * .pi / 180) / 2.4 }
 
     public init(progress: Double) {
         self.progress = progress.isFinite ? max(-1, min(1, progress)) : 0
     }
 
-    /// Inverse vertical mapping, normalized bottom to top. Both edges stay fixed.
+    /// Inverse ray projection onto the stationary desktop. The hinge stays fixed.
     public func sourceHeight(at height: Double) -> Double {
         let y = max(0, min(1, height))
-        return y + progress * 0.32 * y * (1 - y)
+        return (y * verticalScale - 0.5 * y * depthScale) / width(at: y)
     }
 
+    /// Projected horizontal span. Opening away from the eye reverses the perspective.
     public func width(at height: Double) -> Double {
-        let y = max(0, min(1, height))
-        let depth = progress >= 0 ? y : 1 - y
-        return 1 - 0.24 * intensity * depth * depth
+        1 - max(0, min(1, height)) * depthScale
     }
 }

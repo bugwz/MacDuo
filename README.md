@@ -26,7 +26,7 @@ MacDuo is a macOS prototype that turns your live desktop into a virtual display 
 
 ## Features
 
-- **Live desktop effect** — the desktop bends continuously, with tapered sides, progressive defocus, and soft dark edges.
+- **Live desktop effect** — the desktop is projected through a pane rotating around the bottom hinge, with distance-based defocus and dimming.
 - **Flexible controls** — use a compatible lid sensor, the panel slider, or native Touch Bar controls.
 - **Quick exit** — click the folded image, stop from the menu bar, or press **Control + Option + Command + F (⌃⌥⌘F)**. Manual previews end after 60 seconds.
 - **Two interface languages** — English and Simplified Chinese, with a saved language preference.
@@ -59,9 +59,9 @@ The fullscreen effect will not start if the emergency shortcut cannot be registe
 
 ## Desktop effect
 
-The entire desktop bends with its top and bottom edges fixed. Lower angles taper and defocus the upper region; returning to the reference restores the desktop, and higher angles reverse the curve. The pose stays fixed when the angle stops. At the reference angle, the overlay hides so you can interact normally with the desktop.
+The desktop is viewed through a virtual glass pane rotating around the bottom hinge. Lower angles taper and defocus the upper region; returning to the reference restores the desktop, and higher angles reverse the perspective. The pose stays fixed when the angle stops. At the reference angle, the overlay hides so you can interact normally with the desktop.
 
-The desktop retains its full height while bending continuously, with up to 24% horizontal taper. Closing keeps the bottom clear while the upper region progressively defocuses; opening past the reference reverses the curve. Core Image / Metal samples sharp and blurred textures at matching coordinates, with soft dark edges instead of a duplicate desktop background. Rendering runs off the main thread, at up to 1920 pixels wide, with one frame in flight and only the latest input pending. Returning to the reference immediately restores the original image.
+A stationary eye projects each point of the rotating pane onto the desktop plane. The hinge remains anchored in both directions; the upper content moves naturally with perspective rather than keeping an artificially fixed top edge. The maximum virtual tilt is 50°. Core Image / Metal blends sharp and blurred textures at the same projected coordinates, with diffusion and dimming increasing with distance from the desktop. The silhouette fades softly to black. Blur distances scale with image height for consistent optics across resolutions. Rendering runs off the main thread, at up to 1920 pixels wide, with one frame in flight and only the latest input pending. Returning to the reference immediately restores the original image.
 
 ## Touch Bar
 

@@ -18,7 +18,8 @@ final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
         // ScreenCaptureKit is authoritative. CGPreflightScreenCaptureAccess can be
         // stale for a running/rebuilt process; never turn it into a permanent denial.
         // This is called only by an explicit Start action, never by a polling loop.
-        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        // Include hidden windows so our app can be excluded before its overlay appears.
+        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
         guard let display = content.displays.first(where: { $0.displayID == displayID }) else {
             throw NSError(domain: "MacDuo", code: 1, userInfo: [NSLocalizedDescriptionKey: L("Target display not found. Start the effect again.", "找不到目标屏幕，请重新开启。")])
         }

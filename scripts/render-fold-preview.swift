@@ -10,7 +10,8 @@ struct RenderFoldPreview {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let renderer = FoldRenderer()
         let source = makePreviewImage()
-        for (name, progress) in [("flat", 0.0), ("closing", 0.55), ("closed", 1.0), ("opening", -0.7)] {
+        for (name, progress) in [("flat", 0.0), ("near-closing", 0.02), ("near-opening", -0.02),
+                                 ("closing", 0.55), ("closed", 1.0), ("opening", -0.7), ("fully-open", -1.0)] {
             guard let image = renderer.render(source, progress: progress),
                   let data = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
                 throw NSError(domain: "MacDuo.RenderCheck", code: 1,
