@@ -26,7 +26,7 @@ MacDuo is a macOS prototype that turns your live desktop into a virtual display 
 
 ## Features
 
-- **Live desktop effect** — the whole desktop rotates around a bottom hinge, with a light blurred background and soft edges.
+- **Live desktop effect** — the desktop bends continuously, with tapered sides, progressive defocus, and soft dark edges.
 - **Flexible controls** — use a compatible lid sensor, the panel slider, or native Touch Bar controls.
 - **Quick exit** — click the folded image, stop from the menu bar, or press **Control + Option + Command + F (⌃⌥⌘F)**. Manual previews end after 60 seconds.
 - **Two interface languages** — English and Simplified Chinese, with a saved language preference.
@@ -59,9 +59,9 @@ The fullscreen effect will not start if the emergency shortcut cannot be registe
 
 ## Desktop effect
 
-The entire desktop rotates around its bottom horizontal hinge. Lower angles fold it down; returning to the reference restores the desktop, and higher angles tilt it in the opposite direction. The pose stays fixed when the angle stops. At the reference angle, the overlay hides so you can interact normally with the desktop.
+The entire desktop bends with its top and bottom edges fixed. Lower angles taper and defocus the upper region; returning to the reference restores the desktop, and higher angles reverse the curve. The pose stays fixed when the angle stops. At the reference angle, the overlay hides so you can interact normally with the desktop.
 
-The maximum visual tilt is 28°. A low-resolution, asynchronously blurred live desktop fills the surrounding area, and display edges fade into that light background. The rotating display and background use separate compositing layers. Near the reference angle, the original image is shown without a white fade overlay.
+The desktop retains its full height while bending continuously, with up to 24% horizontal taper. Closing keeps the bottom clear while the upper region progressively defocuses; opening past the reference reverses the curve. Core Image / Metal samples sharp and blurred textures at matching coordinates, with soft dark edges instead of a duplicate desktop background. Rendering runs off the main thread, at up to 1920 pixels wide, with one frame in flight and only the latest input pending. Returning to the reference immediately restores the original image.
 
 ## Touch Bar
 

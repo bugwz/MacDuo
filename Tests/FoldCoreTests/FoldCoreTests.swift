@@ -23,6 +23,30 @@ final class FoldCoreTests: XCTestCase {
         XCTAssertEqual(latch.update(60.2), 60)
         XCTAssertEqual(latch.update(61), 61)
     }
+    func testCurvedDesktopPreservesEdgesAndMonotonicContent() {
+        for progress in stride(from: -1.0, through: 1.0, by: 0.1) {
+            let pose = FoldPose(progress: progress)
+            XCTAssertEqual(pose.sourceHeight(at: 0), 0)
+            XCTAssertEqual(pose.sourceHeight(at: 1), 1)
+            var previous = -1.0
+            for y in stride(from: 0.0, through: 1.0, by: 0.01) {
+                let source = pose.sourceHeight(at: y)
+                XCTAssertGreaterThan(source, previous)
+                XCTAssertTrue((0...1).contains(source))
+                XCTAssertTrue((0.76...1).contains(pose.width(at: y)))
+                previous = source
+            }
+        }
+        let flat = FoldPose(progress: 0)
+        XCTAssertEqual(flat.width(at: 0.75), 1)
+        XCTAssertEqual(flat.sourceHeight(at: 0.75), 0.75)
+        XCTAssertEqual(FoldPose(progress: 1).width(at: 0), 1)
+        XCTAssertEqual(FoldPose(progress: -1).width(at: 1), 1)
+        XCTAssertEqual(FoldPose(progress: .nan).progress, 0)
+        XCTAssertEqual(FoldPose(progress: .infinity).progress, 0)
+        XCTAssertEqual(FoldPose(progress: 2).progress, 1)
+    }
+
     func testRejectsMalformedSensorReports() {
         XCTAssertEqual(LidReport.angle(bytes: [1, 90, 0]), 90)
         XCTAssertNil(LidReport.angle(bytes: []))

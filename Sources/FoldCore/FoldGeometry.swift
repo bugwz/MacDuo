@@ -42,3 +42,25 @@ public struct AngleLatch {
         return value!
     }
 }
+
+/// Full-height curved desktop; the bottom remains anchored at the hinge.
+public struct FoldPose {
+    public let progress: Double
+    public var intensity: Double { abs(progress) }
+
+    public init(progress: Double) {
+        self.progress = progress.isFinite ? max(-1, min(1, progress)) : 0
+    }
+
+    /// Inverse vertical mapping, normalized bottom to top. Both edges stay fixed.
+    public func sourceHeight(at height: Double) -> Double {
+        let y = max(0, min(1, height))
+        return y + progress * 0.32 * y * (1 - y)
+    }
+
+    public func width(at height: Double) -> Double {
+        let y = max(0, min(1, height))
+        let depth = progress >= 0 ? y : 1 - y
+        return 1 - 0.24 * intensity * depth * depth
+    }
+}

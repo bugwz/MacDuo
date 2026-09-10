@@ -2,128 +2,79 @@ import AppKit
 import QuartzCore
 import CoreImage
 import SwiftUI
+import FoldCore
 
 final class FoldView: NSView {
-    private let backdrop = CALayer()
-    private let backdropTint = CALayer()
-    private static let blurQueue = DispatchQueue(label: "dev.macduo.backdrop", qos: .userInitiated)
-    private static let blurContext = CIContext(options: [.cacheIntermediates: false])
-    private var blurPending = false
-    private var lastBlurTime: CFTimeInterval = -.infinity
-    private let screenContainer = CALayer()
     private let display = CALayer()
-    private let edgeMask = CAGradientLayer()
-    private let sideMask = CAGradientLayer()
+    private let renderQueue = DispatchQueue(label: "dev.macduo.fold", qos: .userInitiated)
+    private let renderer = FoldRenderer()
+    private var latestImage: CGImage?
+    private var rendering = false
+    private var revision: UInt64 = 0
     var onDismiss: (() -> Void)?
-    var progress: Double = 0 { didSet { updateGeometry() } }
+    var progress: Double = 0 {
+        didSet {
+            guard progress != oldValue else { return }
+            revision &+= 1
+            requestRender()
+        }
+    }
 
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
-        layer?.backgroundColor = NSColor.white.cgColor
+        layer?.backgroundColor = NSColor.black.cgColor
         layer?.masksToBounds = true
-        backdrop.contentsGravity = .resizeAspectFill
-        layer?.addSublayer(backdrop)
-        backdropTint.backgroundColor = NSColor.white.withAlphaComponent(0.68).cgColor
-        layer?.addSublayer(backdropTint)
-        display.anchorPoint = CGPoint(x: 0.5, y: 0)
         display.contentsGravity = .resize
-        display.isDoubleSided = false
-        display.masksToBounds = true
-        // Flatten the transformed screen into a separate surface. Its negative
-        // Z while closing must not place it behind the opaque backdrop layers.
-        screenContainer.masksToBounds = true
-        layer?.addSublayer(screenContainer)
-        screenContainer.addSublayer(display)
-        // Multiply horizontal and vertical alpha ramps so all four edges
-        // dissolve into the pale blur rather than ending at a hard black rim.
-        for mask in [edgeMask, sideMask] {
-            mask.colors = [NSColor.clear.cgColor, NSColor.white.cgColor,
-                           NSColor.white.cgColor, NSColor.clear.cgColor]
-        }
-        edgeMask.startPoint = CGPoint(x: 0.5, y: 0)
-        edgeMask.endPoint = CGPoint(x: 0.5, y: 1)
-        sideMask.startPoint = CGPoint(x: 0, y: 0.5)
-        sideMask.endPoint = CGPoint(x: 1, y: 0.5)
-        edgeMask.mask = sideMask
+        layer?.addSublayer(display)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func setImage(_ image: CGImage) {
+        guard latestImage !== image else { return }
+        latestImage = image
+        revision &+= 1
+        requestRender()
+    }
+
+    private func present(_ image: CGImage) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         display.contents = image
-        // A real frame is the fallback while the first asynchronous blur runs.
-        if backdrop.contents == nil { backdrop.contents = image }
         CATransaction.commit()
-        updateBackdrop(image)
     }
 
-    private func updateBackdrop(_ image: CGImage) {
-        // Keep capture and hinge updates responsive: blur a small texture off
-        // the main thread, at most ten times per second, with no queued frames.
-        guard !blurPending, CACurrentMediaTime() - lastBlurTime >= 0.1 else { return }
-        blurPending = true
-        lastBlurTime = CACurrentMediaTime()
-        Self.blurQueue.async { [weak self] in
-            let source = CIImage(cgImage: image)
-            let scale = min(1, 640 / CGFloat(image.width))
-            let small = source.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
-            let blurred = small.clampedToExtent()
-                .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: 24])
-                .cropped(to: small.extent)
-            let result = Self.blurContext.createCGImage(blurred, from: small.extent)
+    private func requestRender() {
+        guard let image = latestImage else { return }
+        let pose = FoldPose(progress: progress)
+        if pose.intensity < 0.001 {
+            present(image)
+            return
+        }
+        guard !rendering else { return }
+        rendering = true
+        let requestedRevision = revision
+        let renderer = renderer
+        // One render in flight. New frames and angles replace pending work.
+        renderQueue.async { [weak self] in
+            let result = renderer.render(image, progress: pose.progress)
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
-                self.blurPending = false
-                if let result {
-                    CATransaction.begin()
-                    CATransaction.setDisableActions(true)
-                    self.backdrop.contents = result
-                    CATransaction.commit()
+                self.rendering = false
+                // Never flash an obsolete pose after returning to the reference.
+                if FoldPose(progress: self.progress).intensity >= 0.001 {
+                    self.present(result ?? image)
                 }
+                if self.revision != requestedRevision { self.requestRender() }
             }
         }
     }
 
     override func layout() {
         super.layout()
-        updateGeometry()
-    }
-
-    private func updateGeometry() {
-        guard bounds.width > 0, bounds.height > 0 else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        // One rigid screen rotates around the bottom horizontal hinge, just
-        // like a laptop lid. The desktop texture is never divided or bent.
-        let p = CGFloat(progress.isFinite ? max(-1, min(1, progress)) : 0)
-        let rotation = -p * 28 * .pi / 180
-        let distance = max(bounds.width, bounds.height) * 5
-        let isFlat = abs(p) < 0.001
-        screenContainer.frame = bounds
-        backdrop.isHidden = isFlat
-        backdropTint.isHidden = isFlat
-        display.mask = isFlat ? nil : edgeMask
-        backdrop.frame = bounds
-        backdropTint.frame = bounds
-        display.cornerRadius = abs(p) * min(bounds.width, bounds.height) * 0.018
-        display.bounds = CGRect(origin: .zero, size: bounds.size)
-        display.position = CGPoint(x: bounds.midX, y: bounds.minY)
-        var transform = CATransform3DIdentity
-        transform.m34 = -1 / distance
-        transform = CATransform3DRotate(transform, rotation, 1, 0, 0)
-        // Keep the complete surface visible when the top projects toward the
-        // viewer; use a uniform fit, never a horizontal content compression.
-        let fit = 1 / (1 + max(0, sin(rotation)) * bounds.height / distance)
-        display.transform = isFlat ? CATransform3DIdentity : CATransform3DScale(transform, fit, fit, fit)
-        edgeMask.frame = display.bounds
-        sideMask.frame = edgeMask.bounds
-        let feather = abs(p) * min(bounds.width, bounds.height) * 0.035
-        let vertical = max(0.00001, feather / bounds.height)
-        let horizontal = max(0.00001, feather / bounds.width)
-        edgeMask.locations = [0, NSNumber(value: Double(vertical)), NSNumber(value: Double(1 - vertical)), 1]
-        sideMask.locations = [0, NSNumber(value: Double(horizontal)), NSNumber(value: Double(1 - horizontal)), 1]
+        display.frame = bounds
         CATransaction.commit()
     }
 
