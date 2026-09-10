@@ -1,0 +1,8 @@
+.build/
+dist/
+.DS_Store
+.swiftpm/
+.local-signing-identity
+*.p12
+*.p8
+*.keychain-db

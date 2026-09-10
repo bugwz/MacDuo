@@ -1,0 +1,21 @@
+name: Build
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build universal development app
+        run: ./scripts/build-app.sh
+      - name: Archive app preserving executable permissions
+        run: ditto -c -k --keepParent dist/MacDuo.app dist/MacDuo-development.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MacDuo-development-ad-hoc
+          path: dist/MacDuo-development.zip
+          retention-days: 7
